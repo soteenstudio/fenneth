@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    name: test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build
+        run: cargo build --locked
+      - name: Test
+        run: cargo test --locked
+
+  fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - run: cargo fmt --all -- --check
+
+  # Builds a release archive exactly like release.yml does and installs it
+  # with the real installer scripts, so a broken installer fails here and not
+  # for users.
+  installers:
+    name: installer (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo build --release --locked
+
+      - name: Install via install.sh (Linux/macOS)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "$(uname -s)-$(uname -m)" in
+            Linux-x86_64)  target=x86_64-unknown-linux-musl ;;
+            Linux-aarch64) target=aarch64-unknown-linux-musl ;;
+            Darwin-arm64)  target=aarch64-apple-darwin ;;
+            Darwin-x86_64) target=x86_64-apple-darwin ;;
+          esac
+          mkdir -p "dist/fenneth-$target"
+          cp target/release/fenneth README.md "dist/fenneth-$target/"
+          tar -czf "dist/fenneth-$target.tar.gz" -C dist "fenneth-$target"
+          (cd dist && { sha256sum "fenneth-$target.tar.gz" 2>/dev/null || shasum -a 256 "fenneth-$target.tar.gz"; } > "fenneth-$target.tar.gz.sha256")
+          export FENNETH_BASE_URL="file://$PWD/dist"
+          export FENNETH_INSTALL="$RUNNER_TEMP/fenneth-home"
+          export FENNETH_NO_MODIFY_PATH=1
+          sh scripts/install.sh
+          "$FENNETH_INSTALL/bin/fenneth" examples/hello.fenneth
+
+      - name: Install via install.ps1 (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $target = 'x86_64-pc-windows-msvc'
+          New-Item -ItemType Directory -Force -Path "dist/fenneth-$target" | Out-Null
+          Copy-Item target/release/fenneth.exe, README.md "dist/fenneth-$target/"
+          Compress-Archive -Path "dist/fenneth-$target" -DestinationPath "dist/fenneth-$target.zip"
+          $hash = (Get-FileHash -Algorithm SHA256 "dist/fenneth-$target.zip").Hash.ToLower()
+          "$hash  fenneth-$target.zip" | Set-Content -NoNewline "dist/fenneth-$target.zip.sha256"
+          $env:FENNETH_BASE_URL = (Resolve-Path dist).Path
+          $env:FENNETH_INSTALL = Join-Path $env:RUNNER_TEMP 'fenneth-home'
+          $env:FENNETH_NO_MODIFY_PATH = '1'
+          ./scripts/install.ps1
+          & "$env:FENNETH_INSTALL\bin\fenneth.exe" examples/hello.fenneth
