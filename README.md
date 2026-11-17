@@ -1,18 +1,12 @@
-<div align="center">
-
 # Fenneth
 
-**A small, statically typed language that compiles to C.**
+> **A small, statically typed language that compiles to C.**
 
-[![CI](https://github.com/OWNER/REPO/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/OWNER/REPO?label=release)](https://github.com/OWNER/REPO/releases/latest)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![CI](https://img.shields.io/github/actions/workflow/status/soteenstudio/fenneth/ci.yml?style=flat-square&logo=github&label=CI)](https://github.com/soteenstudio/fenneth/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/soteenstudio/fenneth?style=flat-square&logo=github&label=Release&color=blue)](https://github.com/soteenstudio/fenneth/releases/latest)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](LICENSE)
 
-[Documentation](https://fenneth.vercel.app) · [Dokumentasi (Indonesia)](https://fenneth.vercel.app/id/) · [Releases](https://github.com/OWNER/REPO/releases) · [Changelog](CHANGELOG.md)
-
-English | [Bahasa Indonesia](README.id.md)
-
-</div>
+**[Documentation](https://fenneth.vercel.app)**  **[Releases](https://github.com/soteenstudio/fenneth/releases)**  **[Changelog](CHANGELOG.md)**
 
 Fenneth has a modern syntax and a type checker that reports every error at once. Programs are compiled to **C99**, and GCC or Clang turns that into a native executable. The compiler is written in Rust and has **no dependencies**.
 
