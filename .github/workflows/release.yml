@@ -110,7 +110,7 @@ jobs:
           if [ "$RUNNER_OS" = "Windows" ]; then bin=fenneth.exe; fi
           mkdir -p "dist/$name"
           cp "target/${{ matrix.target }}/release/$bin" "dist/$name/"
-          cp README.md LICENSE CHANGELOG.md "dist/$name/"
+          cp README.md LICENSE "dist/$name/"
           # The binary must report exactly the release number.
           got="$("dist/$name/$bin" --version)"
           if [ "$got" != "fenneth $FENNETH_VERSION" ]; then
