@@ -37,7 +37,7 @@ concurrency:
 env:
   CARGO_TERM_COLOR: always
   # Number used when no 0.xxx tag exists yet.
-  FIRST_VERSION: "0.003"
+  FIRST_VERSION: "0.001"
 
 jobs:
   version:
