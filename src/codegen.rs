@@ -12,7 +12,12 @@ use std::collections::{BTreeMap, HashSet};
 
 use crate::ast::*;
 
-pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+/// Release builds set `FENNETH_VERSION` (format `0.xxx`, e.g. `0.003`) at
+/// compile time; local builds fall back to the version in `Cargo.toml`.
+pub const VERSION: &str = match option_env!("FENNETH_VERSION") {
+    Some(v) => v,
+    None => env!("CARGO_PKG_VERSION"),
+};
 
 const RUNTIME: &str = include_str!("runtime.c");
 

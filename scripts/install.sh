@@ -4,7 +4,7 @@
 #   curl -fsSL https://github.com/__REPO__/releases/latest/download/install.sh | sh
 #
 # Environment variables:
-#   FENNETH_VERSION        Release tag to install, e.g. v0.2.0 (default: latest)
+#   FENNETH_VERSION        Release tag to install, e.g. 0.003 (default: latest)
 #   FENNETH_INSTALL        Install root; the binary goes to $FENNETH_INSTALL/bin
 #                          (default: $HOME/.fenneth, or $PREFIX on Termux)
 #   FENNETH_NO_MODIFY_PATH Set to 1 to leave your shell profiles untouched

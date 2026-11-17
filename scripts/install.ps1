@@ -3,7 +3,7 @@
 #   irm https://github.com/__REPO__/releases/latest/download/install.ps1 | iex
 #
 # Environment variables:
-#   FENNETH_VERSION         Release tag to install, e.g. v0.2.0 (default: latest)
+#   FENNETH_VERSION         Release tag to install, e.g. 0.003 (default: latest)
 #   FENNETH_INSTALL         Install root; the binary goes to <root>\bin
 #                           (default: %LOCALAPPDATA%\Fenneth)
 #   FENNETH_NO_MODIFY_PATH  Set to 1 to leave your user PATH untouched

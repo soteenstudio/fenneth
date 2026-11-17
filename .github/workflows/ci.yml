@@ -70,7 +70,9 @@ jobs:
           export FENNETH_INSTALL="$RUNNER_TEMP/fenneth-home"
           export FENNETH_NO_MODIFY_PATH=1
           sh scripts/install.sh
-          "$FENNETH_INSTALL/bin/fenneth" examples/hello.fenneth
+          printf 'fn main() -> i32 { print("hello"); return 0; }\n' > "$RUNNER_TEMP/hello.fen"
+          "$FENNETH_INSTALL/bin/fenneth" --version
+          "$FENNETH_INSTALL/bin/fenneth" check "$RUNNER_TEMP/hello.fen"
 
       - name: Install via install.ps1 (Windows)
         if: runner.os == 'Windows'
@@ -86,4 +88,24 @@ jobs:
           $env:FENNETH_INSTALL = Join-Path $env:RUNNER_TEMP 'fenneth-home'
           $env:FENNETH_NO_MODIFY_PATH = '1'
           ./scripts/install.ps1
-          & "$env:FENNETH_INSTALL\bin\fenneth.exe" examples/hello.fenneth
+          Set-Content -Path (Join-Path $env:RUNNER_TEMP 'hello.fen') -Value 'fn main() -> i32 { print("hello"); return 0; }'
+          & "$env:FENNETH_INSTALL\bin\fenneth.exe" --version
+          & "$env:FENNETH_INSTALL\bin\fenneth.exe" check (Join-Path $env:RUNNER_TEMP 'hello.fen')
+
+  # Docs must exist in both languages (English at /, Indonesian at /id/) and
+  # the VitePress site must build, because Vercel builds it from docs/.
+  docs:
+    name: docs (build + en/id parity)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: English and Indonesian pages match
+        run: sh scripts/check-docs-i18n.sh
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Build site
+        working-directory: docs
+        run: |
+          npm install --no-audit --no-fund
+          npm run build
