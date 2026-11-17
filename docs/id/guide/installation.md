@@ -51,7 +51,7 @@ Setiap arsip punya file `.sha256`. Bila tidak ada binary siap pakai (misalnya Te
 
 | Variabel | Fungsi |
 |---|---|
-| `FENNETH_VERSION` | Pasang rilis tertentu, mis. `0.003` (default: terbaru). |
+| `FENNETH_VERSION` | Pasang rilis tertentu, mis. `0.001`. |
 | `FENNETH_INSTALL` | Folder instalasi; binary berada di `<folder>/bin`. |
 | `FENNETH_NO_MODIFY_PATH=1` | Jangan ubah profil shell atau `PATH` pengguna. |
 | `FENNETH_REPO` | `owner/repo` sumber unduhan, jika installer Anda belum menanamkannya. |

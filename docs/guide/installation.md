@@ -51,7 +51,7 @@ Every archive has a matching `.sha256` file. Where no prebuilt binary exists (fo
 
 | Variable | Purpose |
 |---|---|
-| `FENNETH_VERSION` | Install a specific release, for example `0.003` (default: latest). |
+| `FENNETH_VERSION` | Install a specific release, for example `0.001`. |
 | `FENNETH_INSTALL` | Install folder; the binary goes in `<folder>/bin`. |
 | `FENNETH_NO_MODIFY_PATH=1` | Do not touch shell profiles or the user `PATH`. |
 | `FENNETH_REPO` | `owner/repo` to download from, if your copy of the installer does not have it baked in. |
