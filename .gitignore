@@ -2,6 +2,7 @@
 *.o
 *.exe
 *.generated.c
+*.zip
 node_modules
 .vitepress/cache
 .vitepress/dist
