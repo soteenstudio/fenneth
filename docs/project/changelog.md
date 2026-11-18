@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+**Standard library**
+- New standard library, written in Fenneth and built into the compiler. Load a module with `import "std/<module>";`: `std/math`, `std/string`, `std/char` and `std/array` (see [Standard library](/language/stdlib)).
+- Public names are prefixed with the module name (`math_sqrt`, `string_split`, `array_sort_i32`), so a program that does not import a module never sees its names.
+- Std functions that a program never reaches are left out of the generated C.
+- `import "std/..."` also works with `fenneth::compile()` (a single source with no file).
+- `fenneth std` lists the modules and `fenneth std <module>` prints a module's source.
+- `fenneth run` / `fenneth build` now link the C math library (`-lm`) on non-Windows systems.
+- The C runtime now includes `<math.h>` and the helpers that the std modules call (`fen_*`).
+
 **Tooling**
 - Release numbers now use the Luau-style `0.xxx` format (for example `0.003`). The number is baked into `fenneth --version`.
 - Release workflow can be started by pushing a tag or by hand, with automatic numbering and a dry-run mode.

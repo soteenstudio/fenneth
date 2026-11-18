@@ -2,6 +2,15 @@
 
 ## Belum dirilis
 
+**Pustaka standar**
+- Pustaka standar baru, ditulis dengan Fenneth dan tertanam di compiler. Muat modul dengan `import "std/<modul>";`: `std/math`, `std/string`, `std/char`, dan `std/array` (lihat [Pustaka standar](/id/language/stdlib)).
+- Nama publik diawali nama modulnya (`math_sqrt`, `string_split`, `array_sort_i32`), sehingga program yang tidak meng-import sebuah modul tidak pernah melihat nama-namanya.
+- Fungsi std yang tidak pernah dijangkau program dibuang dari C hasil generate.
+- `import "std/..."` juga bekerja dengan `fenneth::compile()` (satu sumber tanpa file).
+- `fenneth std` menampilkan daftar modul dan `fenneth std <modul>` mencetak kode sumber modul.
+- `fenneth run` / `fenneth build` kini me-link pustaka matematika C (`-lm`) di sistem non-Windows.
+- Runtime C kini menyertakan `<math.h>` dan fungsi bantu yang dipanggil modul std (`fen_*`).
+
 **Tooling**
 - Nomor rilis kini memakai format `0.xxx` ala Luau (mis. `0.003`). Nomornya ditanamkan ke `fenneth --version`.
 - Workflow rilis bisa dijalankan dengan push tag atau manual, dengan penomoran otomatis dan mode dry run.

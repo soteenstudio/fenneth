@@ -11,6 +11,7 @@ import "geometry";        // memuat geometry.fen atau geometry.fenneth
 - Setiap file dimuat satu kali. Siklus import ditoleransi.
 - Semua modul digabung menjadi satu program: item modul ditempatkan sebelum item file yang meng-import-nya, dan semua nama berada di satu namespace bersama, jadi nama harus unik di seluruh file.
 - Pesan error menyebut file asalnya (`file:baris:kolom`).
+- Path yang diawali `std/` bukan file: ia memuat modul [pustaka standar](/id/language/stdlib) bawaan, misalnya `import "std/math";`.
 
 **geometry.fen**
 
@@ -41,7 +42,7 @@ fenneth main.fen
 
 ## extern fn (FFI)
 
-`extern fn` mendeklarasikan fungsi tanpa badan yang diimplementasikan di C, atau di Rust dengan C ABI. Linker harus diberi library yang menyediakannya (`--link`).
+`extern fn` mendeklarasikan fungsi tanpa badan yang diimplementasikan di C, atau di Rust dengan C ABI. Linker harus diberi library yang menyediakannya (`--link`). (`fenneth run` dan `fenneth build` selalu me-link pustaka matematika C, `-lm`, di luar itu.)
 
 ```fenneth
 extern fn host_add(a: i32, b: i32) -> i32;

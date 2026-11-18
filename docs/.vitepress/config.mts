@@ -16,6 +16,7 @@ type Labels = {
   data: string
   keywords: string
   builtins: string
+  stdlib: string
   modulesFfi: string
   limitations: string
   project: string
@@ -45,6 +46,7 @@ function sidebar(prefix: string, t: Labels): DefaultTheme.Sidebar {
         { text: t.data, link: `${prefix}/language/data` },
         { text: t.keywords, link: `${prefix}/language/keywords` },
         { text: t.builtins, link: `${prefix}/language/builtins` },
+        { text: t.stdlib, link: `${prefix}/language/stdlib` },
         { text: t.modulesFfi, link: `${prefix}/language/modules-ffi` },
         { text: t.limitations, link: `${prefix}/language/limitations` },
       ],
@@ -73,6 +75,7 @@ const en: Labels = {
   data: 'Structs, arrays and strings',
   keywords: 'Keywords',
   builtins: 'Built-in functions',
+  stdlib: 'Standard library',
   modulesFfi: 'Modules and FFI',
   limitations: 'Limitations and runtime checks',
   project: 'Project',
@@ -94,6 +97,7 @@ const id: Labels = {
   data: 'Struct, array, dan string',
   keywords: 'Keyword',
   builtins: 'Fungsi bawaan',
+  stdlib: 'Pustaka standar',
   modulesFfi: 'Modul dan FFI',
   limitations: 'Batasan dan pemeriksaan runtime',
   project: 'Proyek',

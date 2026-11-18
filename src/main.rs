@@ -6,6 +6,7 @@ use std::path::{Path, PathBuf};
 use std::process::{exit, Command};
 
 use fenneth::loader::{resolve_path, EXTENSIONS};
+use fenneth::stdlib;
 use fenneth::VERSION;
 
 const USAGE: &str = "\
@@ -17,6 +18,7 @@ USAGE:
     fenneth build <file> [-o out] [options]      Compile to a native executable
     fenneth emit  <file> [-o out.c]              Compile to C (stdout by default)
     fenneth check <file>                         Type-check only
+    fenneth std [module]                         List the standard library, or print a module
     fenneth --version | --help
 
 OPTIONS (build/run):
@@ -26,6 +28,7 @@ OPTIONS (build/run):
     --keep-c           Keep the generated .c file next to the output
 
 `<file>` may omit its extension; `.fen` is tried before `.fenneth`.
+The standard library is imported with `import \"std/<module>\";`.
 ";
 
 struct Options {
@@ -166,6 +169,8 @@ fn build_native(opts: &Options, exe: &Path, c_path: &Path) {
         .arg(exe)
         .arg(c_path)
         .args(&opts.link)
+        // The standard library (std/math) uses libm; harmless otherwise.
+        .args(if cfg!(windows) { &[][..] } else { &["-lm"][..] })
         .status()
         .unwrap_or_else(|e| die(&format!("failed to run '{}': {}", cc, e)));
     if !opts.keep_c {
@@ -189,6 +194,30 @@ fn cmd_run(rest: &[String]) -> ! {
         .unwrap_or_else(|e| die(&format!("failed to run program: {}", e)));
     let _ = fs::remove_dir_all(&dir);
     exit(status.code().unwrap_or(1));
+}
+
+/// `fenneth std` lists the standard modules; `fenneth std math` prints one.
+fn cmd_std(rest: &[String]) {
+    match rest.first() {
+        None => {
+            println!("Standard library modules (use `import \"std/<module>\";`):");
+            for name in stdlib::module_names() {
+                println!("    std/{}", name);
+            }
+            println!("\nPrint a module's source with `fenneth std <module>`.");
+        }
+        Some(arg) => {
+            let name = arg.strip_prefix(stdlib::PREFIX).unwrap_or(arg);
+            match stdlib::module_source(name) {
+                Some(src) => print!("{}", src),
+                None => die(&format!(
+                    "unknown standard library module '{}' (available: {})",
+                    arg,
+                    stdlib::module_names().join(", ")
+                )),
+            }
+        }
+    }
 }
 
 fn main() {
@@ -231,6 +260,7 @@ fn main() {
             eprintln!("built {}", exe.display());
         }
         "run" => cmd_run(rest),
+        "std" => cmd_std(rest),
         other => {
             // `fenneth file.fen [args]` is shorthand for `fenneth run file.fen`.
             if !other.starts_with('-') && resolve_path(Path::new(other)).is_some() {

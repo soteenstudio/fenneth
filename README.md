@@ -13,6 +13,7 @@ Fenneth is a statically typed language with zero-dependency Rust compiler implem
 - **Statically Typed**: Explicit types, custom structs, and arrays with strict compile-time checking.
 - **C99 Target**: Compiles down to readable C code via GCC or Clang.
 - **Safety**: Built-in runtime checks for bounds, division by zero, and overflows.
+- **Standard library**: `import "std/math";`, `std/string`, `std/char` and `std/array`, written in Fenneth and built into the compiler.
 
 ## Resource
 
