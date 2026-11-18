@@ -1,0 +1,6 @@
+import "std/math";
+
+fn main() -> i32 {
+    print(math_clamp(10, 0, 50));
+    return 0;
+}

@@ -199,6 +199,9 @@ pub struct Function {
     pub pos: Pos,
     /// `extern fn` declarations have no body and link to C/Rust symbols.
     pub is_extern: bool,
+    /// True for functions that come from a standard library module
+    /// (`import "std/..."`). Unused ones are dropped before code generation.
+    pub from_std: bool,
 }
 
 #[derive(Debug, Clone)]

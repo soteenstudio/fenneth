@@ -11,6 +11,7 @@ import "geometry";        // loads geometry.fen or geometry.fenneth
 - Every file is loaded once. Import cycles are tolerated.
 - All modules are merged into one program: a module's items come before those of the file that imports it, and every name lives in one shared namespace, so names must be unique across files.
 - Error messages name the file they come from (`file:line:column`).
+- Paths that start with `std/` are not files: they load a module of the built-in [standard library](/language/stdlib), for example `import "std/math";`.
 
 **geometry.fen**
 
@@ -41,7 +42,7 @@ fenneth main.fen
 
 ## extern fn (FFI)
 
-`extern fn` declares a function with no body that is implemented in C, or in Rust with a C ABI. The linker must be given the library that provides it (`--link`).
+`extern fn` declares a function with no body that is implemented in C, or in Rust with a C ABI. The linker must be given the library that provides it (`--link`). (`fenneth run` and `fenneth build` always link the C math library, `-lm`, on top of that.)
 
 ```fenneth
 extern fn host_add(a: i32, b: i32) -> i32;

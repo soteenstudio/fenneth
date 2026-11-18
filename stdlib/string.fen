@@ -1,0 +1,208 @@
+// std/string - working with String values.
+//
+//     import "std/string";
+//
+// Strings are byte strings: every index and length counts bytes, and the
+// case functions only change ASCII letters. Functions never modify their
+// argument; they return a new String.
+
+extern fn fen_str_cmp(a: String, b: String) -> i32;
+extern fn fen_str_find_from(s: String, sub: String, from: i32) -> i32;
+extern fn fen_str_slice(s: String, a: i32, b: i32) -> String;
+extern fn fen_str_upper(s: String) -> String;
+extern fn fen_str_lower(s: String) -> String;
+extern fn fen_str_reverse(s: String) -> String;
+extern fn fen_str_trim(s: String, mode: i32) -> String;
+extern fn fen_str_repeat(s: String, n: i32) -> String;
+extern fn fen_str_replace(s: String, from: String, to: String) -> String;
+extern fn fen_str_to_f64(s: String) -> f64;
+extern fn fen_f64_fixed(x: f64, digits: i32) -> String;
+
+// ---- inspecting ------------------------------------------------------------
+
+fn string_is_empty(s: String) -> bool {
+    return len(s) == 0;
+}
+
+// -1 when a sorts before b, 0 when they are equal, 1 when a sorts after b.
+// Compares byte by byte, so "Z" sorts before "a".
+fn string_compare(a: String, b: String) -> i32 {
+    return fen_str_cmp(a, b);
+}
+
+fn string_starts_with(s: String, prefix: String) -> bool {
+    let n: i32 = len(prefix);
+    if n > len(s) { return false; }
+    return fen_str_slice(s, 0, n) == prefix;
+}
+
+fn string_ends_with(s: String, suffix: String) -> bool {
+    let n: i32 = len(s);
+    let m: i32 = len(suffix);
+    if m > n { return false; }
+    return fen_str_slice(s, n - m, n) == suffix;
+}
+
+// Position of the first `sub` in `s`, or -1. An empty `sub` is found at 0.
+fn string_index_of(s: String, sub: String) -> i32 {
+    return fen_str_find_from(s, sub, 0);
+}
+
+// Like string_index_of but starts looking at byte `from`. Panics when `from`
+// is outside 0..=len(s).
+fn string_index_from(s: String, sub: String, from: i32) -> i32 {
+    if from < 0 || from > len(s) { panic("string_index_from: start out of range"); }
+    return fen_str_find_from(s, sub, from);
+}
+
+fn string_contains(s: String, sub: String) -> bool {
+    return fen_str_find_from(s, sub, 0) >= 0;
+}
+
+// How many non-overlapping times `sub` occurs in `s` (0 for an empty `sub`).
+fn string_count(s: String, sub: String) -> i32 {
+    let step: i32 = len(sub);
+    if step == 0 { return 0; }
+    let count: i32 = 0;
+    let pos: i32 = fen_str_find_from(s, sub, 0);
+    while pos >= 0 {
+        count += 1;
+        pos = fen_str_find_from(s, sub, pos + step);
+    }
+    return count;
+}
+
+// ---- transforming ----------------------------------------------------------
+
+fn string_to_upper(s: String) -> String { return fen_str_upper(s); }
+fn string_to_lower(s: String) -> String { return fen_str_lower(s); }
+fn string_reverse(s: String) -> String { return fen_str_reverse(s); }
+
+// Removes ASCII whitespace at both ends / the start / the end.
+fn string_trim(s: String) -> String { return fen_str_trim(s, 0); }
+fn string_trim_start(s: String) -> String { return fen_str_trim(s, 1); }
+fn string_trim_end(s: String) -> String { return fen_str_trim(s, 2); }
+
+// `s` written n times in a row. Panics when n < 0.
+fn string_repeat(s: String, n: i32) -> String {
+    return fen_str_repeat(s, n);
+}
+
+// Replaces every non-overlapping `from` by `to`. An empty `from` leaves the
+// string unchanged.
+fn string_replace(s: String, from: String, to: String) -> String {
+    return fen_str_replace(s, from, to);
+}
+
+// Pads on the left (right) with `fill` until the result is `width` bytes
+// long. `fill` must be exactly one byte; a longer `s` is returned unchanged.
+fn string_pad_left(s: String, width: i32, fill: String) -> String {
+    if len(fill) != 1 { panic("string_pad_left: fill must be one byte"); }
+    let missing: i32 = width - len(s);
+    if missing <= 0 { return s; }
+    return fen_str_repeat(fill, missing) + s;
+}
+
+fn string_pad_right(s: String, width: i32, fill: String) -> String {
+    if len(fill) != 1 { panic("string_pad_right: fill must be one byte"); }
+    let missing: i32 = width - len(s);
+    if missing <= 0 { return s; }
+    return s + fen_str_repeat(fill, missing);
+}
+
+// ---- splitting and joining -------------------------------------------------
+
+// Cuts `s` at every `sep`: string_split("a,b,,c", ",") is ["a", "b", "", "c"].
+// "" gives [""]. An empty `sep` cuts between every byte.
+fn string_split(s: String, sep: String) -> [String] {
+    let parts: [String] = [];
+    let n: i32 = len(s);
+    let step: i32 = len(sep);
+    if step == 0 {
+        for i in 0..n { push(parts, fen_str_slice(s, i, i + 1)); }
+        return parts;
+    }
+    let start: i32 = 0;
+    let hit: i32 = fen_str_find_from(s, sep, 0);
+    while hit >= 0 {
+        push(parts, fen_str_slice(s, start, hit));
+        start = hit + step;
+        hit = fen_str_find_from(s, sep, start);
+    }
+    push(parts, fen_str_slice(s, start, n));
+    return parts;
+}
+
+// The lines of `s`. Both "\n" and "\r\n" end a line, and a final line ending
+// does not start an empty extra line (so a file's text splits like you expect).
+fn string_lines(s: String) -> [String] {
+    let parts: [String] = string_split(s, "\n");
+    if len(parts) > 0 && len(parts[len(parts) - 1]) == 0 { pop(parts); }
+    let lines: [String] = [];
+    for p in parts {
+        let n: i32 = len(p);
+        if n > 0 && str_at(p, n - 1) == 13 {
+            push(lines, fen_str_slice(p, 0, n - 1));
+        } else {
+            push(lines, p);
+        }
+    }
+    return lines;
+}
+
+// Joins parts[lo..hi] with `sep`. Halving keeps the copying at O(n log n).
+fn _string_join_range(parts: [String], sep: String, lo: i32, hi: i32) -> String {
+    if hi - lo == 0 { return ""; }
+    if hi - lo == 1 { return parts[lo]; }
+    let mid: i32 = lo + (hi - lo) / 2;
+    return _string_join_range(parts, sep, lo, mid) + sep + _string_join_range(parts, sep, mid, hi);
+}
+
+// string_join(["a", "b", "c"], "-") is "a-b-c"; an empty array gives "".
+fn string_join(parts: [String], sep: String) -> String {
+    return _string_join_range(parts, sep, 0, len(parts));
+}
+
+// ---- numbers ---------------------------------------------------------------
+
+// True when `s` is an optional '+' or '-' followed by decimal digits only,
+// and the number fits in an i32. (str_to_i32 gives 0 for bad input and cannot
+// tell you; check with this first.)
+fn string_is_int(s: String) -> bool {
+    let n: i32 = len(s);
+    let start: i32 = 0;
+    let negative: bool = false;
+    if n > 0 {
+        let first: i32 = str_at(s, 0);
+        if first == 45 || first == 43 {
+            negative = first == 45;
+            start = 1;
+        }
+    }
+    // Skip leading zeros, then count the significant digits.
+    let i: i32 = start;
+    while i < n && str_at(s, i) == 48 { i += 1; }
+    let digits: i32 = n - i;
+    if n == start { return false; }
+    for k in start..n {
+        let c: i32 = str_at(s, k);
+        if c < 48 || c > 57 { return false; }
+    }
+    if digits > 10 { return false; }
+    if digits < 10 { return true; }
+    let limit: String = "2147483647";
+    if negative { limit = "2147483648"; }
+    return fen_str_cmp(fen_str_slice(s, i, n), limit) <= 0;
+}
+
+// Parses a decimal number such as "3.25", "-1e3" or ".5". Gives 0.0 when `s`
+// does not start with a number, just like str_to_i32 does for integers.
+fn string_parse_f64(s: String) -> f64 {
+    return fen_str_to_f64(s);
+}
+
+// `x` with exactly `decimals` digits after the point (0..40, "3" and not
+// "3." when decimals is 0): string_fixed(3.14159, 2) is "3.14".
+fn string_fixed(x: f64, decimals: i32) -> String {
+    return fen_f64_fixed(x, decimals);
+}

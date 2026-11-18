@@ -1,0 +1,166 @@
+// std/math - numbers.
+//
+//     import "std/math";
+//
+// Integer functions work on i32 (arithmetic wraps on overflow, like the rest
+// of the language). Functions on f64 end in `f` when an i32 twin exists, or
+// have a name that only makes sense for floating point (math_sqrt, ...).
+// The C math library does the heavy lifting; `fenneth build` links it.
+
+const MATH_PI: f64 = 3.141592653589793;
+const MATH_TAU: f64 = 6.283185307179586;
+const MATH_E: f64 = 2.718281828459045;
+const MATH_I32_MAX: i32 = 2147483647;
+const MATH_I32_MIN: i32 = -2147483648;
+
+extern fn fen_sqrt(x: f64) -> f64;
+extern fn fen_pow(x: f64, y: f64) -> f64;
+extern fn fen_floor(x: f64) -> f64;
+extern fn fen_ceil(x: f64) -> f64;
+extern fn fen_round(x: f64) -> f64;
+extern fn fen_trunc(x: f64) -> f64;
+extern fn fen_sin(x: f64) -> f64;
+extern fn fen_cos(x: f64) -> f64;
+extern fn fen_tan(x: f64) -> f64;
+extern fn fen_atan(x: f64) -> f64;
+extern fn fen_atan2(y: f64, x: f64) -> f64;
+extern fn fen_exp(x: f64) -> f64;
+extern fn fen_log(x: f64) -> f64;
+extern fn fen_log10(x: f64) -> f64;
+
+// ---- i32 -------------------------------------------------------------------
+
+// Absolute value. math_abs(MATH_I32_MIN) wraps and stays MATH_I32_MIN.
+fn math_abs(x: i32) -> i32 {
+    if x < 0 { return 0 - x; }
+    return x;
+}
+
+fn math_min(a: i32, b: i32) -> i32 {
+    if a < b { return a; }
+    return b;
+}
+
+fn math_max(a: i32, b: i32) -> i32 {
+    if a > b { return a; }
+    return b;
+}
+
+// Limits x to the range lo..=hi. Panics when lo > hi.
+fn math_clamp(x: i32, lo: i32, hi: i32) -> i32 {
+    if lo > hi { panic("math_clamp: lo is greater than hi"); }
+    if x < lo { return lo; }
+    if x > hi { return hi; }
+    return x;
+}
+
+// -1, 0 or 1.
+fn math_sign(x: i32) -> i32 {
+    if x < 0 { return -1; }
+    if x > 0 { return 1; }
+    return 0;
+}
+
+// Modulo whose result is never negative for a positive b (unlike `%`):
+// math_mod(-7, 3) == 2. Panics when b is 0.
+fn math_mod(a: i32, b: i32) -> i32 {
+    let r: i32 = a % b;
+    if r != 0 && ((r < 0) != (b < 0)) { return r + b; }
+    return r;
+}
+
+// base to the power exp, by repeated squaring. Panics when exp < 0.
+// Wraps on overflow.
+fn math_ipow(base: i32, exp: i32) -> i32 {
+    if exp < 0 { panic("math_ipow: negative exponent"); }
+    let result: i32 = 1;
+    let b: i32 = base;
+    let e: i32 = exp;
+    while e > 0 {
+        if e % 2 == 1 { result = result * b; }
+        b = b * b;
+        e = e / 2;
+    }
+    return result;
+}
+
+// Greatest common divisor; always >= 0. math_gcd(0, 0) == 0.
+fn math_gcd(a: i32, b: i32) -> i32 {
+    let x: i32 = math_abs(a);
+    let y: i32 = math_abs(b);
+    while y != 0 {
+        let t: i32 = x % y;
+        x = y;
+        y = t;
+    }
+    return x;
+}
+
+// Least common multiple; 0 when either argument is 0.
+fn math_lcm(a: i32, b: i32) -> i32 {
+    if a == 0 || b == 0 { return 0; }
+    return math_abs(a / math_gcd(a, b) * b);
+}
+
+// ---- f64 -------------------------------------------------------------------
+
+fn math_absf(x: f64) -> f64 {
+    if x < 0.0 { return 0.0 - x; }
+    return x;
+}
+
+fn math_minf(a: f64, b: f64) -> f64 {
+    if a < b { return a; }
+    return b;
+}
+
+fn math_maxf(a: f64, b: f64) -> f64 {
+    if a > b { return a; }
+    return b;
+}
+
+// Limits x to the range lo..=hi. Panics when lo > hi.
+fn math_clampf(x: f64, lo: f64, hi: f64) -> f64 {
+    if lo > hi { panic("math_clampf: lo is greater than hi"); }
+    if x < lo { return lo; }
+    if x > hi { return hi; }
+    return x;
+}
+
+// True for NaN ("not a number"), the result of e.g. math_sqrt(-1.0).
+fn math_is_nan(x: f64) -> bool {
+    return x != x;
+}
+
+fn math_sqrt(x: f64) -> f64 { return fen_sqrt(x); }
+fn math_pow(x: f64, y: f64) -> f64 { return fen_pow(x, y); }
+fn math_exp(x: f64) -> f64 { return fen_exp(x); }
+
+// Natural logarithm and base-10 logarithm.
+fn math_log(x: f64) -> f64 { return fen_log(x); }
+fn math_log10(x: f64) -> f64 { return fen_log10(x); }
+
+// Rounding. All four give an f64; use math_floor_i32 & co. for an i32.
+fn math_floor(x: f64) -> f64 { return fen_floor(x); }
+fn math_ceil(x: f64) -> f64 { return fen_ceil(x); }
+fn math_trunc(x: f64) -> f64 { return fen_trunc(x); }
+// Rounds half away from zero: 2.5 -> 3.0, -2.5 -> -3.0.
+fn math_round(x: f64) -> f64 { return fen_round(x); }
+
+// The i32 versions are undefined when the result does not fit in an i32.
+fn math_floor_i32(x: f64) -> i32 { return to_i32(fen_floor(x)); }
+fn math_ceil_i32(x: f64) -> i32 { return to_i32(fen_ceil(x)); }
+fn math_round_i32(x: f64) -> i32 { return to_i32(fen_round(x)); }
+
+// Trigonometry works in radians.
+fn math_sin(x: f64) -> f64 { return fen_sin(x); }
+fn math_cos(x: f64) -> f64 { return fen_cos(x); }
+fn math_tan(x: f64) -> f64 { return fen_tan(x); }
+fn math_atan(x: f64) -> f64 { return fen_atan(x); }
+fn math_atan2(y: f64, x: f64) -> f64 { return fen_atan2(y, x); }
+
+fn math_to_radians(degrees: f64) -> f64 { return degrees * MATH_PI / 180.0; }
+fn math_to_degrees(radians: f64) -> f64 { return radians * 180.0 / MATH_PI; }
+
+// Length of the hypotenuse, sqrt(x*x + y*y).
+fn math_hypot(x: f64, y: f64) -> f64 { return fen_sqrt(x * x + y * y); }

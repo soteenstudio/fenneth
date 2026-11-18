@@ -185,6 +185,7 @@ impl Parser {
             body,
             pos,
             is_extern,
+            from_std: false,
         })
     }
 
