@@ -3,7 +3,9 @@
 ## Unreleased
 
 **Standard library**
-- New standard library, written in Fenneth and built into the compiler. Load a module with `import "std/<module>";`: `std/math`, `std/string`, `std/char` and `std/array` (see [Standard library](/language/stdlib)).
+- New standard library, written in Fenneth and built into the compiler. Load a module with `import "std/<module>";`: `std/math`, `std/string`, `std/char`, `std/array`, `std/fs`, `std/http` and `std/zip` (see [Standard library](/language/stdlib)).
+- `std/fs` covers directories, metadata, copy/rename/remove and path helpers; `std/http` fetches URLs with GET, POST and downloads; `std/zip` reads any normal archive and creates stored archives.
+- The C behind `std/fs`, `std/http` and `std/zip` lives in `src/runtime/*.c` and is added to the generated C only when the program uses that module.
 - Public names are prefixed with the module name (`math_sqrt`, `string_split`, `array_sort_i32`), so a program that does not import a module never sees its names.
 - Std functions that a program never reaches are left out of the generated C.
 - `import "std/..."` also works with `fenneth::compile()` (a single source with no file).

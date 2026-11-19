@@ -20,6 +20,9 @@ fn main() -> i32 {
 | [`std/string`](#std-string) | Searching, splitting, joining, trimming, replacing, padding, number parsing and formatting |
 | [`std/char`](#std-char) | Classifying and converting single bytes |
 | [`std/array`](#std-array) | Sorting, searching, slicing and summing arrays of `i32`, `f64` and `String` |
+| [`std/fs`](#std-fs) | Directories, file metadata, copying, renaming, removing, and path helpers |
+| [`std/http`](#std-http) | Fetching URLs over HTTP(S): GET, POST, downloads, URL encoding |
+| [`std/zip`](#std-zip) | Reading, unpacking and creating `.zip` archives |
 
 Run `fenneth std` to list the modules and `fenneth std math` to print the source of one.
 
@@ -28,7 +31,7 @@ Run `fenneth std` to list the modules and `fenneth std math` to print the source
 - **One shared namespace.** Fenneth has no namespaces, so every public name starts with the name of its module: `math_abs`, `string_split`, `array_sort_i32`. Names that start with an underscore (`_array_msort_i32`) are private helpers; do not call them.
 - **The `std/` prefix is reserved.** `import "std/math";` always means the built-in module, even if a `std` folder exists next to your file.
 - **Opt-in.** A program that does not import a module does not see its names, so your own `max` or `math_abs` stays yours. If you import a module and also define one of its names, the compiler reports `function '...' is defined more than once`.
-- **Only what you use is compiled.** Std functions that your program never reaches are dropped from the generated C. Everything in an imported module is still type-checked.
+- **Only what you use is compiled.** Std functions that your program never reaches are dropped from the generated C. Everything in an imported module is still type-checked. `std/fs`, `std/http` and `std/zip` also carry their own C, which is spliced into the output only when a function from that module survives.
 - **Modules can import modules.** `std/array` imports `std/string`, so `string_compare` is available after `import "std/array";`.
 - **C library.** `std/math` uses the C math library. `fenneth run` and `fenneth build` link it (`-lm`) on Linux, macOS and Termux. If you compile the output of `fenneth emit` yourself, add `-lm`.
 - **Errors.** Misuse such as `array_min_i32` on an empty array stops the program with `panic: ...` and exit code 101, like the [runtime checks](/language/limitations).
@@ -182,7 +185,152 @@ fn main() -> i32 {
 }
 ```
 
+## std/fs
+
+```fenneth
+import "std/fs";
+```
+
+Files and directories. The built-ins `read_file`, `write_file` and `file_exists` still do the whole-file cases; this module adds directories, metadata, copying and path handling. Paths are ordinary `String`s. Functions that can fail return `false` (or `-1`), never a panic.
+
+**Asking about a path**
+
+| Function | Description |
+|---|---|
+| `fs_exists(path)` | `true` if something is there: file, directory or link. |
+| `fs_is_dir(path)`, `fs_is_file(path)` | Is it a directory / a regular file? |
+| `fs_size(path)` | Size in bytes, or `-1` when it is not a readable file. |
+
+**Changing the file system**
+
+| Function | Description |
+|---|---|
+| `fs_mkdir(path)` | Create one directory. `true` if created or already there. |
+| `fs_mkdir_all(path)` | Create `path` and every missing parent: `fs_mkdir_all("a/b/c")`. |
+| `fs_remove(path)` | Delete a file (or an empty directory). |
+| `fs_remove_dir(path)` | Delete an empty directory. |
+| `fs_rename(from, to)` | Move, replacing `to` when it exists. |
+| `fs_copy(from, to)` | Copy the bytes of one file to another. |
+| `fs_append(path, text)` | Append text, creating the file when needed. |
+
+**Directories**
+
+| Function | Description |
+|---|---|
+| `fs_list(path)` | Entry names as one line per name (`""` when it cannot be read). |
+| `fs_entries(path)` | The same, already split into a `[String]`. |
+
+**Places**
+
+| Function | Description |
+|---|---|
+| `fs_cwd()` | The current working directory. |
+| `fs_temp_dir()` | `$TMPDIR` / `%TEMP%`, or `/tmp`. |
+| `fs_temp_path(prefix)` | A fresh unused path inside the temp directory (nothing is created). |
+
+**Paths**
+
+| Function | Description |
+|---|---|
+| `fs_separator()` | `"\\"` on Windows, `"/"` elsewhere. |
+| `fs_join(a, b)` | Join with a separator unless `b` is absolute or `a` already ends with one. |
+| `fs_basename(path)` | Last part: `"a/b/c.txt"` gives `"c.txt"`. |
+| `fs_dirname(path)` | Everything but the last part: `"a/b/c.txt"` gives `"a/b"`. |
+| `fs_extension(path)` | Text after the last dot, without the dot (`"gz"`). |
+
+```fenneth
+import "std/fs";
+
+fn main() -> i32 {
+    let dir: String = fs_join(fs_temp_dir(), "demo");
+    fs_mkdir_all(fs_join(dir, "sub"));
+    write_file(fs_join(dir, "a.txt"), "hello\n");
+    for name in fs_entries(dir) {
+        print(name + ": " + to_str(fs_size(fs_join(dir, name))));
+    }
+    return 0;
+}
+```
+
+## std/http
+
+```fenneth
+import "std/http";
+```
+
+Fetch URLs over HTTP and HTTPS. Requests are run by the `curl` command (Windows 10+, macOS and most Linux systems have it); `wget` is used when curl is missing, and only with plain URLs. Nothing is linked, but the program needs one of them on `PATH` when it runs.
+
+| Function | Description |
+|---|---|
+| `http_get(url)` | GET `url`; the response body (`""` when the request failed). |
+| `http_post(url, content_type, body)` | POST `body`; the response body. |
+| `http_post_json(url, json)` | POST with `Content-Type: application/json`. |
+| `http_post_form(url, form)` | POST with `application/x-www-form-urlencoded`. |
+| `http_download(url, path)` | Save the response to a file. `true` on success. Use this for binaries. |
+| `http_last_status()` | Status code of the last request (`200`, `404`, ...), `0` on failure. |
+| `http_last_ok()` | `true` when that code is 2xx. |
+| `http_last_error()` | Why the last request failed (`""` when it worked). |
+| `http_encode(s)`, `http_decode(s)` | Percent-encode / decode a value. `http_decode` also turns `+` into a space. |
+| `http_form_encode(pairs)` | Encode the values of `"a=1&b=2"` and keep the keys. |
+| `http_with_query(url, query)` | Append a query string with `?` or `&` as needed. |
+
+A 404 is a normal response: you get the body and `http_last_status()` is `404`.
+
+```fenneth
+import "std/http";
+
+fn main() -> i32 {
+    let q: String = http_form_encode("q=hello world");
+    let body: String = http_get(http_with_query("https://example.com/search", q));
+    if !http_last_ok() {
+        print("request failed: " + http_last_error());
+        return 1;
+    }
+    print(len(body));
+    return 0;
+}
+```
+
+## std/zip
+
+```fenneth
+import "std/zip";
+```
+
+Read and write `.zip` archives. The reader handles any normal archive (stored and deflated entries, including the binaries inside); the writer produces a standard archive with stored (uncompressed) entries, so it is valid everywhere but bigger than a deflated one.
+
+| Function | Description |
+|---|---|
+| `zip_list(archive)` | Entry names, one per line (`""` when the archive cannot be read). |
+| `zip_entries(archive)` | The same as a `[String]`. |
+| `zip_contains(archive, name)` | Is there an entry with this name? |
+| `zip_entry_size(archive, name)` | Uncompressed size in bytes, or `-1`. |
+| `zip_read(archive, name)` | One entry as a `String` (`""` when missing). |
+| `zip_extract(archive, dest_dir)` | Unpack every entry below `dest_dir`, creating the folders it needs. |
+| `zip_extract_file(archive, name, dest)` | Unpack one entry to an exact path. |
+| `zip_create(archive, entries)` | Create an archive: `"name=path"` per line, `"name="` for an empty entry. |
+| `zip_create_files(archive, names, sources)` | The same from two matching arrays. |
+| `zip_last_error()` | Why the last call failed (`""` when it worked). |
+
+```fenneth
+import "std/zip";
+import "std/fs";
+
+fn main() -> i32 {
+    let arc: String = fs_join(fs_temp_dir(), "out.zip");
+    if !zip_create(arc, "VERSION=\nreadme.txt=README.md") {
+        print(zip_last_error());
+        return 1;
+    }
+    zip_extract(arc, fs_join(fs_temp_dir(), "unpacked"));
+    print(zip_contains(arc, "readme.txt"));
+    return 0;
+}
+```
+
 ## Limitations
 
 - Without generics there are three copies of every array function, and there is no `array_sort` for arrays of structs. Write your own loop (or a merge sort like `fenneth std array` shows) for those.
-- There are no hash maps, no file-system functions beyond the built-ins, and no Unicode-aware string functions yet.
+- There are no hash maps and no Unicode-aware string functions yet.
+- `std/http` needs the `curl` (or `wget`) command on `PATH` when the program runs; nothing extra is linked.
+- `std/zip` reads stored and deflated entries (any normal archive) but writes stored, uncompressed entries.

@@ -3,7 +3,9 @@
 ## Belum dirilis
 
 **Pustaka standar**
-- Pustaka standar baru, ditulis dengan Fenneth dan tertanam di compiler. Muat modul dengan `import "std/<modul>";`: `std/math`, `std/string`, `std/char`, dan `std/array` (lihat [Pustaka standar](/id/language/stdlib)).
+- Pustaka standar baru, ditulis dengan Fenneth dan tertanam di compiler. Muat modul dengan `import "std/<modul>";`: `std/math`, `std/string`, `std/char`, `std/array`, `std/fs`, `std/http`, dan `std/zip` (lihat [Pustaka standar](/id/language/stdlib)).
+- `std/fs` menangani direktori, metadata, salin/ganti nama/hapus, dan bantuan path; `std/http` mengambil URL dengan GET, POST, dan unduhan; `std/zip` membaca arsip normal apa pun dan membuat arsip stored.
+- C di balik `std/fs`, `std/http`, dan `std/zip` ada di `src/runtime/*.c` dan hanya ditambahkan ke C hasil generate bila program memakai modul itu.
 - Nama publik diawali nama modulnya (`math_sqrt`, `string_split`, `array_sort_i32`), sehingga program yang tidak meng-import sebuah modul tidak pernah melihat nama-namanya.
 - Fungsi std yang tidak pernah dijangkau program dibuang dari C hasil generate.
 - `import "std/..."` juga bekerja dengan `fenneth::compile()` (satu sumber tanpa file).

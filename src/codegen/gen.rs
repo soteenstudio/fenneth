@@ -43,6 +43,9 @@ pub struct CodeGen {
     pub(super) indent: usize,
     pub(super) tmp: usize,
     pub(super) externs: std::collections::HashSet<String>,
+    /// Extra C runtime files to splice in (see [`crate::stdlib::RUNTIME_UNITS`]),
+    /// in output order.
+    pub(super) runtime_units: Vec<&'static str>,
 }
 
 impl CodeGen {

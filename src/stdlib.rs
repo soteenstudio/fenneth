@@ -22,12 +22,45 @@ use crate::ast::*;
 pub const PREFIX: &str = "std/";
 
 /// `(module name, source)` for every standard module.
-const MODULES: [(&str, &str); 4] = [
+const MODULES: [(&str, &str); 7] = [
     ("array", include_str!("../stdlib/array.fen")),
     ("char", include_str!("../stdlib/char.fen")),
+    ("fs", include_str!("../stdlib/fs.fen")),
+    ("http", include_str!("../stdlib/http.fen")),
     ("math", include_str!("../stdlib/math.fen")),
     ("string", include_str!("../stdlib/string.fen")),
+    ("zip", include_str!("../stdlib/zip.fen")),
 ];
+
+/// Modules whose `fen_*` implementations live in their own C file (see
+/// [`runtime_unit`]) instead of the always-present `runtime.c`. A program
+/// that never reaches one of their functions does not pay for the C.
+pub const RUNTIME_UNITS: [&str; 3] = ["fs", "http", "zip"];
+
+/// The C source that implements the `extern fn fen_*` declarations of a
+/// standard module: `runtime_unit("fs")` is `Some(("fs", <fs.c>))`. Modules
+/// backed by the always-present runtime return `None`.
+pub fn runtime_unit(name: &str) -> Option<(&'static str, &'static str)> {
+    Some(match name {
+        "fs" => ("fs", include_str!("runtime/fs.c")),
+        "http" => ("http", include_str!("runtime/http.c")),
+        "zip" => ("zip", include_str!("runtime/zip.c")),
+        _ => return None,
+    })
+}
+
+/// The runtime unit that provides the C symbol `symbol`, if any.
+pub fn unit_of_symbol(symbol: &str) -> Option<&'static str> {
+    if symbol.starts_with("fen_fs_") {
+        Some("fs")
+    } else if symbol.starts_with("fen_http_") || symbol.starts_with("fen_url_") {
+        Some("http")
+    } else if symbol.starts_with("fen_zip_") {
+        Some("zip")
+    } else {
+        None
+    }
+}
 
 /// Names of all standard modules, sorted.
 pub fn module_names() -> Vec<&'static str> {
