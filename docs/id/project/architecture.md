@@ -18,11 +18,31 @@ fenneth/
 │   ├── lib.rs         pipeline compile() dan compile_path()
 │   ├── loader.rs      import multi-file, ekstensi .fen/.fenneth, import std/
 │   ├── stdlib.rs      tabel pustaka standar tertanam, pembuangan fungsi tak terpakai
-│   ├── lexer.rs       source -> token
-│   ├── parser.rs      token -> AST
+│   ├── lexer/         source -> token
+│   │   ├── mod.rs     kursor, melewati trivia, tokenize()
+│   │   ├── token.rs   TokenKind, Token, describe()
+│   │   ├── literals.rs  identifier, angka, string
+│   │   └── symbols.rs operator dan tanda baca
+│   ├── parser/        token -> AST
+│   │   ├── mod.rs     kursor, entri precedence climbing, parse_program()
+│   │   ├── items.rs   tipe, fungsi, struct, global, import
+│   │   ├── stmt.rs    statement dan blok
+│   │   └── expr.rs    ekspresi, presedensi unary/binary, postfix
 │   ├── ast.rs         definisi AST
-│   ├── checker.rs     type checker statis
-│   ├── codegen.rs     AST -> C99
+│   ├── checker/       type checker statis
+│   │   ├── mod.rs     state Checker, scope, check()
+│   │   ├── decl.rs    struct, fungsi, global, main
+│   │   ├── stmt.rs    statement, alur kontrol, pemeriksaan return
+│   │   ├── expr.rs    ekspresi, operator, indeks, literal struct
+│   │   └── builtins.rs  tanda tangan builtin dan pemeriksaan pemanggilan
+│   ├── codegen/       AST -> C99
+│   │   ├── mod.rs     VERSION, runtime tertanam
+│   │   ├── gen.rs     buffer output, indentasi, nama baru
+│   │   ├── names.rs   pemetaan tipe/identifier, escape string
+│   │   ├── collect.rs  tipe vektor yang perlu dideklarasikan, urutan struct
+│   │   ├── program.rs  satu unit translasi utuh
+│   │   ├── stmt.rs    statement
+│   │   └── expr.rs    ekspresi dan pemanggilan builtin
 │   ├── runtime.c      runtime C yang disisipkan ke setiap hasil
 │   └── diagnostic.rs  posisi dan pesan error
 ├── stdlib/            modul pustaka standar yang ditulis dengan Fenneth (math, string, char, array)
@@ -39,10 +59,10 @@ fenneth/
 |---|---|---|
 | Pustaka standar | `stdlib.rs`, `stdlib/*.fen` | Modul ditanam dengan `include_str!` dan dimuat loader seperti file biasa. Fungsinya ditandai `from_std`; setelah pemeriksaan tipe, fungsi yang tidak dapat dijangkau fungsi pengguna dibuang. |
 | Memuat | `loader.rs` | Menyelesaikan `import` relatif terhadap file yang meng-import, mencoba `.fen` lalu `.fenneth`, memuat tiap file sekali, dan menaruh item modul sebelum item file pengimpornya. |
-| Lexing | `lexer.rs` | Menghasilkan token dengan posisi `file:baris:kolom`. Berhenti pada error pertama. |
-| Parsing | `parser.rs` | Membangun AST. Berhenti pada error pertama. |
-| Type checking | `checker.rs` | Menyelesaikan nama dan tipe, menegakkan aturan di dokumentasi ini, dan mengumpulkan semua error. |
-| Code generation | `codegen.rs` | Menghasilkan C99. Array adalah pointer ke struct vektor hasil generate; struct menjadi struct C. |
+| Lexing | `lexer/` | Menghasilkan token dengan posisi `file:baris:kolom`. Berhenti pada error pertama. |
+| Parsing | `parser/` | Membangun AST. Berhenti pada error pertama. |
+| Type checking | `checker/` | Menyelesaikan nama dan tipe, menegakkan aturan di dokumentasi ini, dan mengumpulkan semua error. |
+| Code generation | `codegen/` | Menghasilkan C99. Array adalah pointer ke struct vektor hasil generate; struct menjadi struct C. |
 | Runtime | `runtime.c` | Disertakan dengan `include_str!` dan disalin ke setiap file hasil: panic, pemeriksaan batas, string, I/O berkas. |
 
 ## API library

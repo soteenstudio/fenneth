@@ -1,7 +1,7 @@
 #!/bin/sh
 # Fenneth installer for Linux, macOS and Termux (Android).
 #
-#   curl -fsSL https://github.com/__REPO__/releases/latest/download/install.sh | sh
+#   curl -fsSL https://github.com/soteenstudio/fenneth/releases/latest/download/install.sh | sh
 #
 # Environment variables:
 #   FENNETH_VERSION        Release tag to install, e.g. 0.003 (default: latest)
@@ -12,7 +12,7 @@
 #   FENNETH_BASE_URL       Download from this URL (file:// works) instead of GitHub
 set -eu
 
-REPO="${FENNETH_REPO:-__REPO__}"
+REPO="${FENNETH_REPO:-soteenstudio/fenneth}"
 VERSION="${FENNETH_VERSION:-latest}"
 BASE_URL="${FENNETH_BASE_URL:-}"
 
@@ -72,9 +72,7 @@ bindir="$root/bin"
 # ---- download URL --------------------------------------------------------------------
 
 if [ -z "$BASE_URL" ]; then
-    case "$REPO" in
-        __REPO__*) err "this copy of the installer does not know its GitHub repo; set FENNETH_REPO=owner/repo" ;;
-    esac
+    [ -n "$REPO" ] || err "FENNETH_REPO is empty; set it to owner/repo"
     if [ "$VERSION" = "latest" ]; then
         BASE_URL="https://github.com/$REPO/releases/latest/download"
     else
@@ -86,7 +84,7 @@ fi
 
 if [ -z "$target" ]; then
     warn "no prebuilt Fenneth binary for $os/$arch"
-    if have cargo && [ "$REPO" != "__REPO__" ]; then
+    if have cargo; then
         say "building from source with cargo..."
         if [ "$VERSION" = "latest" ]; then
             cargo install --locked --git "https://github.com/$REPO" fenneth --root "$root"

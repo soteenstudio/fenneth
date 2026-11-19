@@ -1,6 +1,6 @@
 # Fenneth installer for Windows (PowerShell 5.1+ or PowerShell 7).
 #
-#   irm https://github.com/__REPO__/releases/latest/download/install.ps1 | iex
+#   irm https://github.com/soteenstudio/fenneth/releases/latest/download/install.ps1 | iex
 #
 # Environment variables:
 #   FENNETH_VERSION         Release tag to install, e.g. 0.003 (default: latest)
@@ -15,15 +15,15 @@ $ErrorActionPreference = 'Stop'
 try { [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 } catch { }
 $ProgressPreference = 'SilentlyContinue'
 
-$Repo = if ($env:FENNETH_REPO) { $env:FENNETH_REPO } else { '__REPO__' }
+$Repo = if ($env:FENNETH_REPO) { $env:FENNETH_REPO } else { 'soteenstudio/fenneth' }
 $Version = if ($env:FENNETH_VERSION) { $env:FENNETH_VERSION } else { 'latest' }
 $BaseUrl = $env:FENNETH_BASE_URL
 $Root = if ($env:FENNETH_INSTALL) { $env:FENNETH_INSTALL } else { Join-Path $env:LOCALAPPDATA 'Fenneth' }
 $BinDir = Join-Path $Root 'bin'
 
 if (-not $BaseUrl) {
-    if ($Repo -like '__REPO__*') {
-        throw 'This copy of the installer does not know its GitHub repo; set $env:FENNETH_REPO = "owner/repo".'
+    if (-not $Repo) {
+        throw 'FENNETH_REPO is empty; set $env:FENNETH_REPO = "owner/repo".'
     }
     if ($Version -eq 'latest') {
         $BaseUrl = "https://github.com/$Repo/releases/latest/download"

@@ -18,11 +18,31 @@ fenneth/
 │   ├── lib.rs         compile() and compile_path() pipeline
 │   ├── loader.rs      multi-file import, .fen/.fenneth extensions, std/ imports
 │   ├── stdlib.rs      embedded standard library table, unused-function pruning
-│   ├── lexer.rs       source -> tokens
-│   ├── parser.rs      tokens -> AST
+│   ├── lexer/         source -> tokens
+│   │   ├── mod.rs     cursor, trivia skipping, tokenize()
+│   │   ├── token.rs   TokenKind, Token, describe()
+│   │   ├── literals.rs  identifiers, numbers, strings
+│   │   └── symbols.rs operators and punctuation
+│   ├── parser/        tokens -> AST
+│   │   ├── mod.rs     cursor, precedence climbing entry, parse_program()
+│   │   ├── items.rs   types, functions, structs, globals, imports
+│   │   ├── stmt.rs    statements and blocks
+│   │   └── expr.rs    expressions, unary/binary precedence, postfix
 │   ├── ast.rs         AST definitions
-│   ├── checker.rs     static type checker
-│   ├── codegen.rs     AST -> C99
+│   ├── checker/       static type checker
+│   │   ├── mod.rs     Checker state, scopes, check()
+│   │   ├── decl.rs    structs, functions, globals, main
+│   │   ├── stmt.rs    statements, control flow, return checks
+│   │   ├── expr.rs    expressions, operators, indexing, struct literals
+│   │   └── builtins.rs  builtin signatures and call checking
+│   ├── codegen/       AST -> C99
+│   │   ├── mod.rs     VERSION, embedded runtime
+│   │   ├── gen.rs     output buffer, indentation, fresh names
+│   │   ├── names.rs   type/identifier mapping, string escaping
+│   │   ├── collect.rs  vector types to declare, struct ordering
+│   │   ├── program.rs  whole translation unit
+│   │   ├── stmt.rs    statements
+│   │   └── expr.rs    expressions and builtin calls
 │   ├── runtime.c      C runtime inlined into every output
 │   └── diagnostic.rs  positions and error messages
 ├── stdlib/            standard library modules written in Fenneth (math, string, char, array)
@@ -39,10 +59,10 @@ fenneth/
 |---|---|---|
 | Loading | `loader.rs` | Resolves `import` relative to the importing file, tries `.fen` then `.fenneth`, loads each file once, and puts a module's items before its importer's. |
 | Standard library | `stdlib.rs`, `stdlib/*.fen` | The modules are embedded with `include_str!` and loaded by the loader like any other file. Their functions are marked `from_std`; after type checking, the ones no user function can reach are removed. |
-| Lexing | `lexer.rs` | Produces tokens with `file:line:column` positions. Stops at the first error. |
-| Parsing | `parser.rs` | Builds the AST. Stops at the first error. |
-| Type checking | `checker.rs` | Resolves names and types, enforces the rules in this documentation, and collects all errors. |
-| Code generation | `codegen.rs` | Emits C99. Arrays are pointers to generated vector structs; structs become C structs. |
+| Lexing | `lexer/` | Produces tokens with `file:line:column` positions. Stops at the first error. |
+| Parsing | `parser/` | Builds the AST. Stops at the first error. |
+| Type checking | `checker/` | Resolves names and types, enforces the rules in this documentation, and collects all errors. |
+| Code generation | `codegen/` | Emits C99. Arrays are pointers to generated vector structs; structs become C structs. |
 | Runtime | `runtime.c` | Included with `include_str!` and copied into every generated file: panics, bounds checks, strings, file I/O. |
 
 ## Library API

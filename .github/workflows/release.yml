@@ -153,8 +153,8 @@ jobs:
           merge-multiple: true
       - name: Add installers (with this repository baked in)
         run: |
-          sed "s#__REPO__#${GITHUB_REPOSITORY}#g" scripts/install.sh > dist/install.sh
-          sed "s#__REPO__#${GITHUB_REPOSITORY}#g" scripts/install.ps1 > dist/install.ps1
+          sed "s#soteenstudio/fenneth#${GITHUB_REPOSITORY}#g" scripts/install.sh > dist/install.sh
+          sed "s#soteenstudio/fenneth#${GITHUB_REPOSITORY}#g" scripts/install.ps1 > dist/install.ps1
           ls -l dist
       - uses: softprops/action-gh-release@v2
         with:
