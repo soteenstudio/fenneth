@@ -16,6 +16,8 @@ curl -fsSL https://github.com/OWNER/REPO/releases/latest/download/install.sh | s
 irm https://github.com/OWNER/REPO/releases/latest/download/install.ps1 | iex
 ```
 
+`install.sh` also works in Windows shells that provide a POSIX environment — Git Bash, MSYS2 and Cygwin. It installs the same `fenneth.exe` as `install.ps1`, into the same folder, and also adds that folder to your user `PATH` so `cmd.exe` and PowerShell can find it.
+
 Check it works:
 
 ```sh

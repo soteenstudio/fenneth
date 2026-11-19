@@ -16,6 +16,8 @@ curl -fsSL https://github.com/OWNER/REPO/releases/latest/download/install.sh | s
 irm https://github.com/OWNER/REPO/releases/latest/download/install.ps1 | iex
 ```
 
+`install.sh` juga jalan di shell Windows yang menyediakan lingkungan POSIX — Git Bash, MSYS2, dan Cygwin. Yang dipasang `fenneth.exe` yang sama seperti `install.ps1`, ke folder yang sama, dan folder itu juga ditambahkan ke `PATH` pengguna supaya `cmd.exe` dan PowerShell bisa menemukannya.
+
 Pastikan berhasil:
 
 ```sh
