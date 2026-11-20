@@ -1,0 +1,155 @@
+// std/fs - files and directories.
+//
+//     import "std/fs";
+//     import "std/string";     // for string_lines (fs_entries does it for you)
+//
+// The built-in read_file, write_file and file_exists cover the whole-file
+// case. This module adds the rest: directories, metadata, copying, renaming,
+// removing, and path helpers. Paths are plain Strings; the separator is "/"
+// on Linux, macOS and Termux and "\" on Windows (fs_separator() tells you
+// which, and every path function accepts both).
+//
+// Functions that can fail return a bool (false when the operating system said
+// no) or an empty String; check fs_exists first if you need to tell the
+// difference between "empty file" and "no file".
+
+import "std/string";
+
+extern fn fen_fs_exists(path: String) -> bool;
+extern fn fen_fs_is_dir(path: String) -> bool;
+extern fn fen_fs_is_file(path: String) -> bool;
+extern fn fen_fs_size(path: String) -> i32;
+extern fn fen_fs_mkdir(path: String) -> bool;
+extern fn fen_fs_mkdir_all(path: String) -> bool;
+extern fn fen_fs_remove(path: String) -> bool;
+extern fn fen_fs_remove_dir(path: String) -> bool;
+extern fn fen_fs_rename(from: String, to: String) -> bool;
+extern fn fen_fs_copy(from: String, to: String) -> bool;
+extern fn fen_fs_append(path: String, text: String) -> bool;
+extern fn fen_fs_list(path: String) -> String;
+extern fn fen_fs_cwd() -> String;
+extern fn fen_fs_temp_dir() -> String;
+extern fn fen_fs_temp_path(prefix: String) -> String;
+extern fn fen_fs_separator() -> String;
+extern fn fen_fs_join(a: String, b: String) -> String;
+extern fn fen_fs_basename(path: String) -> String;
+extern fn fen_fs_dirname(path: String) -> String;
+extern fn fen_fs_extension(path: String) -> String;
+
+// ---- asking about a path -----------------------------------------------
+
+// True when `path` names something (a file, a directory, a link).
+fn fs_exists(path: String) -> bool {
+    return fen_fs_exists(path);
+}
+
+fn fs_is_dir(path: String) -> bool {
+    return fen_fs_is_dir(path);
+}
+
+fn fs_is_file(path: String) -> bool {
+    return fen_fs_is_file(path);
+}
+
+// Size in bytes, or -1 when `path` is not a readable file.
+fn fs_size(path: String) -> i32 {
+    return fen_fs_size(path);
+}
+
+// ---- changing the file system ------------------------------------------
+
+// Creates one directory. True when it was created or already existed.
+fn fs_mkdir(path: String) -> bool {
+    return fen_fs_mkdir(path);
+}
+
+// Creates `path` and every missing directory above it: fs_mkdir_all("a/b/c").
+fn fs_mkdir_all(path: String) -> bool {
+    return fen_fs_mkdir_all(path);
+}
+
+// Deletes a file (or an empty directory).
+fn fs_remove(path: String) -> bool {
+    return fen_fs_remove(path);
+}
+
+// Deletes an empty directory. Use fs_list + fs_remove to empty one first.
+fn fs_remove_dir(path: String) -> bool {
+    return fen_fs_remove_dir(path);
+}
+
+// Moves `from` to `to`, replacing `to` when it exists.
+fn fs_rename(from: String, to: String) -> bool {
+    return fen_fs_rename(from, to);
+}
+
+fn fs_copy(from: String, to: String) -> bool {
+    return fen_fs_copy(from, to);
+}
+
+// Appends `text` to a file, creating it when needed.
+fn fs_append(path: String, text: String) -> bool {
+    return fen_fs_append(path, text);
+}
+
+// ---- directories -------------------------------------------------------
+
+// The entry names of a directory, one per line ("" when it cannot be read).
+// Pass the result to string_lines (std/string) to get a [String].
+fn fs_list(path: String) -> String {
+    return fen_fs_list(path);
+}
+
+// The same as fs_list, already split into a [String].
+fn fs_entries(path: String) -> [String] {
+    let raw: String = fen_fs_list(path);
+    if len(raw) == 0 { return []; }
+    return string_lines(raw);
+}
+
+// ---- places ------------------------------------------------------------
+
+// The current working directory.
+fn fs_cwd() -> String {
+    return fen_fs_cwd();
+}
+
+// The directory for temporary files ($TMPDIR, $TEMP, or /tmp).
+fn fs_temp_dir() -> String {
+    return fen_fs_temp_dir();
+}
+
+// A fresh path inside fs_temp_dir(), named after `prefix`. Nothing is
+// created; use it for a scratch file or directory of your own.
+fn fs_temp_path(prefix: String) -> String {
+    return fen_fs_temp_path(prefix);
+}
+
+// ---- paths -------------------------------------------------------------
+
+// The directory separator: "\" on Windows, "/" elsewhere.
+fn fs_separator() -> String {
+    return fen_fs_separator();
+}
+
+// Joins two parts with a separator, unless `b` is already absolute or `a`
+// already ends with one.
+fn fs_join(a: String, b: String) -> String {
+    return fen_fs_join(a, b);
+}
+
+// The last part of a path: fs_basename("a/b/c.txt") is "c.txt".
+fn fs_basename(path: String) -> String {
+    return fen_fs_basename(path);
+}
+
+// The path without its last part: fs_dirname("a/b/c.txt") is "a/b".
+fn fs_dirname(path: String) -> String {
+    return fen_fs_dirname(path);
+}
+
+// The text after the last dot of the file name, without the dot:
+// fs_extension("a/b/c.tar.gz") is "gz". "" when there is none.
+fn fs_extension(path: String) -> String {
+    return fen_fs_extension(path);
+}

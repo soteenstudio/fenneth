@@ -1,0 +1,110 @@
+// std/http - fetch URLs over HTTP and HTTPS.
+//
+//     import "std/http";
+//
+// Requests are made by running the curl command (curl ships with Windows 10+,
+// macOS and most Linux systems); wget is used when curl is missing. So the
+// program needs one of them on PATH at run time, but nothing has to be linked.
+//
+// http_last_status() and http_last_error() describe the most recent request:
+//
+//     let body: String = http_get("https://example.com/data.json");
+//     if http_last_status() != 200 { print(http_last_error()); }
+//
+// A failed request gives "" and a status of 0. A 404 is a success as far as
+// this module is concerned: you get the error page and a status of 404.
+
+import "std/string";
+
+extern fn fen_http_get(url: String) -> String;
+extern fn fen_http_post(url: String, content_type: String, body: String) -> String;
+extern fn fen_http_download(url: String, path: String) -> bool;
+extern fn fen_http_status() -> i32;
+extern fn fen_http_error() -> String;
+extern fn fen_url_encode(s: String) -> String;
+extern fn fen_url_decode(s: String) -> String;
+
+// ---- requests ----------------------------------------------------------
+
+// Fetches `url`. The body is returned as it arrived (text).
+fn http_get(url: String) -> String {
+    return fen_http_get(url);
+}
+
+// POSTs `body` to `url` with the given Content-Type, e.g. "application/json".
+fn http_post(url: String, content_type: String, body: String) -> String {
+    return fen_http_post(url, content_type, body);
+}
+
+// POSTs JSON (sets Content-Type: application/json for you).
+fn http_post_json(url: String, json: String) -> String {
+    return fen_http_post(url, "application/json", json);
+}
+
+// POSTs form fields (Content-Type: application/x-www-form-urlencoded). Build
+// `form` with http_form_encode first.
+fn http_post_form(url: String, form: String) -> String {
+    return fen_http_post(url, "application/x-www-form-urlencoded", form);
+}
+
+// Downloads `url` into the file at `path`. True on success. Meant for
+// binaries (images, zips, ...), which a String cannot hold safely.
+fn http_download(url: String, path: String) -> bool {
+    return fen_http_download(url, path);
+}
+
+// ---- reading the response ----------------------------------------------
+
+// The HTTP status code of the last request (200, 404, ...), 0 on failure.
+fn http_last_status() -> i32 {
+    return fen_http_status();
+}
+
+// The error message of the last failed request ("" when it worked).
+fn http_last_error() -> String {
+    return fen_http_error();
+}
+
+// True when the last request answered with a 2xx code.
+fn http_last_ok() -> bool {
+    let code: i32 = fen_http_status();
+    return code >= 200 && code < 300;
+}
+
+// ---- encoding ----------------------------------------------------------
+
+// Percent-encodes a value for a URL: http_encode("a b&c") is "a%20b%26c".
+fn http_encode(s: String) -> String {
+    return fen_url_encode(s);
+}
+
+// Reverses http_encode, and turns '+' into a space (form encoding).
+fn http_decode(s: String) -> String {
+    return fen_url_decode(s);
+}
+
+// Builds a query string from pairs given as "a=1&b=2" - the values are
+// encoded, the keys are kept as written.
+fn http_form_encode(pairs: String) -> String {
+    let parts: [String] = string_split(pairs, "&");
+    let out: [String] = [];
+    for p in parts {
+        let eq: i32 = string_index_of(p, "=");
+        if eq < 0 {
+            push(out, fen_url_encode(p));
+        } else {
+            push(out, substr(p, 0, eq) + "=" + fen_url_encode(substr(p, eq + 1, len(p))));
+        }
+    }
+    return string_join(out, "&");
+}
+
+// Appends a query string to a URL, using '?' or '&' as needed. An empty
+// `query` returns `url` unchanged.
+fn http_with_query(url: String, query: String) -> String {
+    if len(query) == 0 { return url; }
+    if string_contains(url, "?") {
+        return url + "&" + query;
+    }
+    return url + "?" + query;
+}

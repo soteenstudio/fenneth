@@ -7,18 +7,29 @@ use super::collect::{collect_vecs, order_structs};
 use super::gen::CodeGen;
 use super::names::{c_type, decl, field_name, fn_name, var_name};
 use super::{RUNTIME, VERSION};
+use crate::stdlib;
 
 /// Generates a complete C translation unit for a type-checked program.
 pub fn generate(program: &Program) -> String {
+    let externs: Vec<String> = program
+        .functions
+        .iter()
+        .filter(|f| f.is_extern)
+        .map(|f| f.name.clone())
+        .collect();
     let mut g = CodeGen {
         out: String::new(),
         indent: 0,
         tmp: 0,
-        externs: program
-            .functions
+        externs: externs.iter().cloned().collect(),
+        runtime_units: stdlib::RUNTIME_UNITS
             .iter()
-            .filter(|f| f.is_extern)
-            .map(|f| f.name.clone())
+            .copied()
+            .filter(|unit| {
+                externs
+                    .iter()
+                    .any(|name| stdlib::unit_of_symbol(name) == Some(*unit))
+            })
             .collect(),
     };
     g.program(program);
@@ -51,6 +62,14 @@ impl CodeGen {
         ));
         for l in RUNTIME.lines() {
             self.line(l);
+        }
+        let units = self.runtime_units.clone();
+        for unit in units {
+            if let Some((_, source)) = crate::stdlib::runtime_unit(unit) {
+                for l in source.lines() {
+                    self.line(l);
+                }
+            }
         }
         self.line("");
 

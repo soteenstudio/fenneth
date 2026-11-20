@@ -44,8 +44,11 @@ fenneth/
 │   │   ├── stmt.rs    statements
 │   │   └── expr.rs    expressions and builtin calls
 │   ├── runtime.c      C runtime inlined into every output
+│   ├── runtime/       extra C inlined only for the modules that need it:
+│   │                  fs.c, http.c, zip.c
 │   └── diagnostic.rs  positions and error messages
-├── stdlib/            standard library modules written in Fenneth (math, string, char, array)
+├── stdlib/            standard library modules written in Fenneth
+│                      (math, string, char, array, fs, http, zip)
 ├── tests/             integration tests (pipeline.rs, stdlib.rs)
 ├── scripts/           install.sh (Linux/macOS/Termux), install.ps1 (Windows),
 │                      check-docs-i18n.sh (docs parity check)
@@ -58,7 +61,7 @@ fenneth/
 | Stage | Module | Notes |
 |---|---|---|
 | Loading | `loader.rs` | Resolves `import` relative to the importing file, tries `.fen` then `.fenneth`, loads each file once, and puts a module's items before its importer's. |
-| Standard library | `stdlib.rs`, `stdlib/*.fen` | The modules are embedded with `include_str!` and loaded by the loader like any other file. Their functions are marked `from_std`; after type checking, the ones no user function can reach are removed. |
+| Standard library | `stdlib.rs`, `stdlib/*.fen` | The modules are embedded with `include_str!` and loaded by the loader like any other file. Their functions are marked `from_std`; after type checking, the ones no user function can reach are removed. Modules whose `extern fn fen_*` needs real C (`fs`, `http`, `zip`) keep it in `src/runtime/*.c`, which the code generator splices in only when an `extern` from that unit survives pruning. |
 | Lexing | `lexer/` | Produces tokens with `file:line:column` positions. Stops at the first error. |
 | Parsing | `parser/` | Builds the AST. Stops at the first error. |
 | Type checking | `checker/` | Resolves names and types, enforces the rules in this documentation, and collects all errors. |

@@ -1,6 +1,6 @@
-import "std/math";
+import "std/fs";
 
 fn main() -> i32 {
-    print(math_clamp(10, 0, 50));
+    fs_mkdir(16);
     return 0;
 }

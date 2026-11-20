@@ -20,6 +20,9 @@ fn main() -> i32 {
 | [`std/string`](#std-string) | Mencari, memecah, menggabung, memangkas, mengganti, padding, parsing dan format angka |
 | [`std/char`](#std-char) | Mengklasifikasi dan mengonversi satu byte |
 | [`std/array`](#std-array) | Mengurutkan, mencari, mengiris, dan menjumlah array `i32`, `f64`, dan `String` |
+| [`std/fs`](#std-fs) | Direktori, metadata file, menyalin, mengganti nama, menghapus, dan bantuan path |
+| [`std/http`](#std-http) | Mengambil URL lewat HTTP(S): GET, POST, unduhan, encoding URL |
+| [`std/zip`](#std-zip) | Membaca, membongkar, dan membuat arsip `.zip` |
 
 Jalankan `fenneth std` untuk melihat daftar modul dan `fenneth std math` untuk mencetak kode sumber sebuah modul.
 
@@ -28,7 +31,7 @@ Jalankan `fenneth std` untuk melihat daftar modul dan `fenneth std math` untuk m
 - **Satu namespace bersama.** Fenneth tidak punya namespace, jadi setiap nama publik diawali nama modulnya: `math_abs`, `string_split`, `array_sort_i32`. Nama yang diawali garis bawah (`_array_msort_i32`) adalah fungsi bantu privat; jangan dipanggil.
 - **Awalan `std/` dicadangkan.** `import "std/math";` selalu berarti modul bawaan, walaupun ada folder `std` di sebelah file Anda.
 - **Opt-in.** Program yang tidak meng-import sebuah modul tidak melihat nama-namanya, sehingga `max` atau `math_abs` buatan Anda tetap milik Anda. Jika Anda meng-import modul lalu juga mendefinisikan salah satu namanya, compiler melaporkan `function '...' is defined more than once`.
-- **Hanya yang dipakai yang dikompilasi.** Fungsi std yang tidak pernah dijangkau program Anda dibuang dari C hasil generate. Semua isi modul yang di-import tetap diperiksa tipenya.
+- **Hanya yang dipakai yang dikompilasi.** Fungsi std yang tidak pernah dijangkau program Anda dibuang dari C hasil generate. Semua isi modul yang di-import tetap diperiksa tipenya. `std/fs`, `std/http`, dan `std/zip` juga membawa C-nya sendiri, yang baru disisipkan ke hasil generate bila ada fungsi dari modul itu yang bertahan.
 - **Modul bisa meng-import modul.** `std/array` meng-import `std/string`, jadi `string_compare` tersedia setelah `import "std/array";`.
 - **Pustaka C.** `std/math` memakai pustaka matematika C. `fenneth run` dan `fenneth build` me-link-nya (`-lm`) di Linux, macOS, dan Termux. Jika Anda mengompilasi hasil `fenneth emit` sendiri, tambahkan `-lm`.
 - **Error.** Salah pakai seperti `array_min_i32` pada array kosong menghentikan program dengan `panic: ...` dan exit code 101, sama seperti [pemeriksaan runtime](/id/language/limitations).
@@ -182,7 +185,152 @@ fn main() -> i32 {
 }
 ```
 
+## std/fs
+
+```fenneth
+import "std/fs";
+```
+
+File dan direktori. Fungsi bawaan `read_file`, `write_file`, dan `file_exists` tetap menangani kasus satu file utuh; modul ini menambah direktori, metadata, penyalinan, dan pengelolaan path. Path adalah `String` biasa. Fungsi yang bisa gagal mengembalikan `false` (atau `-1`), tidak pernah panic.
+
+**Menanyakan sebuah path**
+
+| Fungsi | Keterangan |
+|---|---|
+| `fs_exists(path)` | `true` bila ada sesuatu di sana: file, direktori, atau link. |
+| `fs_is_dir(path)`, `fs_is_file(path)` | Apakah direktori / file biasa? |
+| `fs_size(path)` | Ukuran dalam byte, atau `-1` bila bukan file yang bisa dibaca. |
+
+**Mengubah sistem file**
+
+| Fungsi | Keterangan |
+|---|---|
+| `fs_mkdir(path)` | Membuat satu direktori. `true` bila dibuat atau sudah ada. |
+| `fs_mkdir_all(path)` | Membuat `path` beserta semua induk yang belum ada: `fs_mkdir_all("a/b/c")`. |
+| `fs_remove(path)` | Menghapus file (atau direktori kosong). |
+| `fs_remove_dir(path)` | Menghapus direktori kosong. |
+| `fs_rename(from, to)` | Memindahkan, mengganti `to` bila sudah ada. |
+| `fs_copy(from, to)` | Menyalin isi satu file ke file lain. |
+| `fs_append(path, text)` | Menambahkan teks di akhir, membuat file bila perlu. |
+
+**Direktori**
+
+| Fungsi | Keterangan |
+|---|---|
+| `fs_list(path)` | Nama entri, satu per baris (`""` bila tidak bisa dibaca). |
+| `fs_entries(path)` | Sama, sudah dipecah menjadi `[String]`. |
+
+**Lokasi**
+
+| Fungsi | Keterangan |
+|---|---|
+| `fs_cwd()` | Direktori kerja saat ini. |
+| `fs_temp_dir()` | `$TMPDIR` / `%TEMP%`, atau `/tmp`. |
+| `fs_temp_path(prefix)` | Path baru yang belum dipakai di direktori temp (tidak dibuat). |
+
+**Path**
+
+| Fungsi | Keterangan |
+|---|---|
+| `fs_separator()` | `"\\"` di Windows, `"/"` di tempat lain. |
+| `fs_join(a, b)` | Menggabung dengan separator, kecuali `b` absolut atau `a` sudah berakhir dengannya. |
+| `fs_basename(path)` | Bagian terakhir: `"a/b/c.txt"` menghasilkan `"c.txt"`. |
+| `fs_dirname(path)` | Semua kecuali bagian terakhir: `"a/b/c.txt"` menghasilkan `"a/b"`. |
+| `fs_extension(path)` | Teks setelah titik terakhir, tanpa titiknya (`"gz"`). |
+
+```fenneth
+import "std/fs";
+
+fn main() -> i32 {
+    let dir: String = fs_join(fs_temp_dir(), "demo");
+    fs_mkdir_all(fs_join(dir, "sub"));
+    write_file(fs_join(dir, "a.txt"), "hello\n");
+    for name in fs_entries(dir) {
+        print(name + ": " + to_str(fs_size(fs_join(dir, name))));
+    }
+    return 0;
+}
+```
+
+## std/http
+
+```fenneth
+import "std/http";
+```
+
+Mengambil URL lewat HTTP dan HTTPS. Permintaan dijalankan oleh perintah `curl` (tersedia di Windows 10+, macOS, dan sebagian besar Linux); `wget` dipakai bila curl tidak ada, dan hanya untuk URL biasa. Tidak ada yang di-link, tetapi program butuh salah satunya di `PATH` saat berjalan.
+
+| Fungsi | Keterangan |
+|---|---|
+| `http_get(url)` | GET `url`; isi respons (`""` bila permintaan gagal). |
+| `http_post(url, content_type, body)` | POST `body`; isi respons. |
+| `http_post_json(url, json)` | POST dengan `Content-Type: application/json`. |
+| `http_post_form(url, form)` | POST dengan `application/x-www-form-urlencoded`. |
+| `http_download(url, path)` | Menyimpan respons ke file. `true` bila berhasil. Pakai ini untuk biner. |
+| `http_last_status()` | Kode status permintaan terakhir (`200`, `404`, ...), `0` bila gagal. |
+| `http_last_ok()` | `true` bila kode itu 2xx. |
+| `http_last_error()` | Penyebab kegagalan terakhir (`""` bila berhasil). |
+| `http_encode(s)`, `http_decode(s)` | Percent-encode / decode. `http_decode` juga mengubah `+` menjadi spasi. |
+| `http_form_encode(pairs)` | Meng-encode nilai dari `"a=1&b=2"` dan mempertahankan kuncinya. |
+| `http_with_query(url, query)` | Menambahkan query dengan `?` atau `&` sesuai kebutuhan. |
+
+404 adalah respons normal: isinya tetap Anda terima dan `http_last_status()` bernilai `404`.
+
+```fenneth
+import "std/http";
+
+fn main() -> i32 {
+    let q: String = http_form_encode("q=hello world");
+    let body: String = http_get(http_with_query("https://example.com/search", q));
+    if !http_last_ok() {
+        print("permintaan gagal: " + http_last_error());
+        return 1;
+    }
+    print(len(body));
+    return 0;
+}
+```
+
+## std/zip
+
+```fenneth
+import "std/zip";
+```
+
+Membaca dan menulis arsip `.zip`. Pembaca menangani arsip normal apa pun (entri stored maupun deflated, termasuk biner di dalamnya); penulis menghasilkan arsip standar dengan entri stored (tanpa kompresi), jadi tetap valid di mana saja tetapi lebih besar daripada versi deflated.
+
+| Fungsi | Keterangan |
+|---|---|
+| `zip_list(archive)` | Nama entri, satu per baris (`""` bila arsip tidak bisa dibaca). |
+| `zip_entries(archive)` | Sama, sebagai `[String]`. |
+| `zip_contains(archive, name)` | Apakah ada entri dengan nama ini? |
+| `zip_entry_size(archive, name)` | Ukuran setelah dekompresi, atau `-1`. |
+| `zip_read(archive, name)` | Satu entri sebagai `String` (`""` bila tidak ada). |
+| `zip_extract(archive, dest_dir)` | Membongkar semua entri di bawah `dest_dir`, membuat folder yang diperlukan. |
+| `zip_extract_file(archive, name, dest)` | Membongkar satu entri ke path tertentu. |
+| `zip_create(archive, entries)` | Membuat arsip: `"nama=path"` per baris, `"nama="` untuk entri kosong. |
+| `zip_create_files(archive, names, sources)` | Sama, dari dua array yang sepadan. |
+| `zip_last_error()` | Penyebab kegagalan terakhir (`""` bila berhasil). |
+
+```fenneth
+import "std/zip";
+import "std/fs";
+
+fn main() -> i32 {
+    let arc: String = fs_join(fs_temp_dir(), "out.zip");
+    if !zip_create(arc, "VERSION=\nreadme.txt=README.md") {
+        print(zip_last_error());
+        return 1;
+    }
+    zip_extract(arc, fs_join(fs_temp_dir(), "unpacked"));
+    print(zip_contains(arc, "readme.txt"));
+    return 0;
+}
+```
+
 ## Batasan
 
 - Tanpa generics, setiap fungsi array ada dalam tiga salinan, dan tidak ada `array_sort` untuk array struct. Tulis loop sendiri (atau merge sort seperti yang ditunjukkan `fenneth std array`) untuk itu.
-- Belum ada hash map, fungsi sistem file di luar yang bawaan, maupun fungsi string yang paham Unicode.
+- Belum ada hash map dan belum ada fungsi string yang paham Unicode.
+- `std/http` butuh perintah `curl` (atau `wget`) di `PATH` saat program berjalan; tidak ada pustaka tambahan yang di-link.
+- `std/zip` membaca entri stored maupun deflated (arsip normal apa pun) tetapi menulis entri stored tanpa kompresi.

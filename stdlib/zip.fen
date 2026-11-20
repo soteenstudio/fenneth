@@ -1,0 +1,107 @@
+// std/zip - read and write .zip archives.
+//
+//     import "std/zip";
+//
+// Reading handles any normal archive: entries may be stored or deflated, and
+// the CRC-32 that the archive carries is not needed to unpack them. Writing
+// produces a valid archive with stored (uncompressed) entries, so a file you
+// create here opens anywhere - it is just bigger than a deflated one.
+//
+//     if zip_extract("release.zip", "out") { print("unpacked"); }
+//     let text: String = zip_read("release.zip", "VERSION");
+//
+// Entry names are the names inside the archive ("dir/file.txt", always with
+// forward slashes). Errors explain themselves in zip_last_error().
+
+import "std/string";
+
+extern fn fen_zip_list(archive: String) -> String;
+extern fn fen_zip_contains(archive: String, name: String) -> bool;
+extern fn fen_zip_entry_size(archive: String, name: String) -> i32;
+extern fn fen_zip_read(archive: String, name: String) -> String;
+extern fn fen_zip_extract(archive: String, dest_dir: String) -> bool;
+extern fn fen_zip_extract_file(archive: String, name: String, dest: String) -> bool;
+extern fn fen_zip_create(archive: String, names: String, sources: String) -> bool;
+extern fn fen_zip_error() -> String;
+
+// ---- inspecting --------------------------------------------------------
+
+// The entry names, one per line ("" when the archive cannot be read).
+fn zip_list(archive: String) -> String {
+    return fen_zip_list(archive);
+}
+
+// The entry names as a [String].
+fn zip_entries(archive: String) -> [String] {
+    let raw: String = fen_zip_list(archive);
+    if len(raw) == 0 { return []; }
+    return string_lines(raw);
+}
+
+fn zip_contains(archive: String, name: String) -> bool {
+    return fen_zip_contains(archive, name);
+}
+
+// Uncompressed size of an entry in bytes, or -1 when there is no such entry.
+fn zip_entry_size(archive: String, name: String) -> i32 {
+    return fen_zip_entry_size(archive, name);
+}
+
+// The message of the last failure ("" when it worked).
+fn zip_last_error() -> String {
+    return fen_zip_error();
+}
+
+// ---- reading -----------------------------------------------------------
+
+// The contents of one entry ("" when it is missing or cannot be read).
+fn zip_read(archive: String, name: String) -> String {
+    return fen_zip_read(archive, name);
+}
+
+// Writes one entry to `dest`, creating the parent directories it needs.
+fn zip_extract_file(archive: String, name: String, dest: String) -> bool {
+    return fen_zip_extract_file(archive, name, dest);
+}
+
+// Unpacks every entry under `dest_dir`. Directory entries become real
+// directories.
+fn zip_extract(archive: String, dest_dir: String) -> bool {
+    return fen_zip_extract(archive, dest_dir);
+}
+
+// ---- writing -----------------------------------------------------------
+
+// Creates `archive` holding every (name, path) pair of `entries`.
+//
+// `entries` is text with one entry per line, "name=path": the file at `path`
+// is stored under `name`. A line "name=" stores an empty entry.
+//
+//     zip_create("out.zip", "a.txt=build/a.txt\nempty.txt=");
+//
+// Existing files are replaced. True when the archive was written.
+fn zip_create(archive: String, entries: String) -> bool {
+    let names: [String] = [];
+    let sources: [String] = [];
+    for line in string_lines(entries) {
+        if len(line) == 0 { continue; }
+        let eq: i32 = string_index_of(line, "=");
+        if eq < 0 {
+            push(names, line);
+            push(sources, "");
+        } else {
+            push(names, substr(line, 0, eq));
+            push(sources, substr(line, eq + 1, len(line)));
+        }
+    }
+    return fen_zip_create(archive, string_join(names, "\n"), string_join(sources, "\n"));
+}
+
+// Creates `archive` from two matching arrays: the name in the archive and
+// the file on disk. A source of "" stores an empty entry.
+fn zip_create_files(archive: String, names: [String], sources: [String]) -> bool {
+    if len(names) != len(sources) {
+        panic("zip_create_files: names and sources differ in length");
+    }
+    return fen_zip_create(archive, string_join(names, "\n"), string_join(sources, "\n"));
+}

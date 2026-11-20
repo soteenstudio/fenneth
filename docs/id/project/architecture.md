@@ -44,8 +44,11 @@ fenneth/
 │   │   ├── stmt.rs    statement
 │   │   └── expr.rs    ekspresi dan pemanggilan builtin
 │   ├── runtime.c      runtime C yang disisipkan ke setiap hasil
+│   ├── runtime/       C tambahan yang hanya disisipkan untuk modul yang butuh:
+│   │                  fs.c, http.c, zip.c
 │   └── diagnostic.rs  posisi dan pesan error
-├── stdlib/            modul pustaka standar yang ditulis dengan Fenneth (math, string, char, array)
+├── stdlib/            modul pustaka standar yang ditulis dengan Fenneth
+│                      (math, string, char, array, fs, http, zip)
 ├── tests/             test integrasi (pipeline.rs, stdlib.rs)
 ├── scripts/           install.sh (Linux/macOS/Termux), install.ps1 (Windows),
 │                      check-docs-i18n.sh (pengecekan kesamaan docs)
@@ -57,7 +60,7 @@ fenneth/
 
 | Tahap | Modul | Catatan |
 |---|---|---|
-| Pustaka standar | `stdlib.rs`, `stdlib/*.fen` | Modul ditanam dengan `include_str!` dan dimuat loader seperti file biasa. Fungsinya ditandai `from_std`; setelah pemeriksaan tipe, fungsi yang tidak dapat dijangkau fungsi pengguna dibuang. |
+| Pustaka standar | `stdlib.rs`, `stdlib/*.fen` | Modul ditanam dengan `include_str!` dan dimuat loader seperti file biasa. Fungsinya ditandai `from_std`; setelah pemeriksaan tipe, fungsi yang tidak dapat dijangkau fungsi pengguna dibuang. Modul yang `extern fn fen_*`-nya butuh C nyata (`fs`, `http`, `zip`) menyimpannya di `src/runtime/*.c`, yang baru disisipkan code generator bila ada `extern` dari unit itu yang bertahan setelah pruning. |
 | Memuat | `loader.rs` | Menyelesaikan `import` relatif terhadap file yang meng-import, mencoba `.fen` lalu `.fenneth`, memuat tiap file sekali, dan menaruh item modul sebelum item file pengimpornya. |
 | Lexing | `lexer/` | Menghasilkan token dengan posisi `file:baris:kolom`. Berhenti pada error pertama. |
 | Parsing | `parser/` | Membangun AST. Berhenti pada error pertama. |
